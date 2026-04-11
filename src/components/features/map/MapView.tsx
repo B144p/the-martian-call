@@ -79,15 +79,19 @@ export function MapView({ onlineContinents }: MapViewProps) {
     <MapContainer
       center={[20, 0]}
       zoom={2}
+      minZoom={2}
+      maxZoom={10}
+      maxBounds={[[-90, -180], [90, 180]]}
+      maxBoundsViscosity={1.0}
       zoomControl={false}
       attributionControl={false}
-      style={{ height: '100%', width: '100%', background: '#0a0a0a' }}
+      style={{ height: '100%', width: '100%', minHeight: '100vh', background: '#0a0a0a' }}
     >
       <MapInit />
       <TileLayer
         url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
         subdomains="abcd"
-        maxZoom={19}
+        maxZoom={10}
       />
 
       {/* Faint dots for other online users' continents */}
