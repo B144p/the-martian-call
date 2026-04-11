@@ -1,65 +1,91 @@
-import Image from "next/image";
+import { auth } from '@/auth';
+import { UserProvider } from '@/src/contexts/UserContext';
+import { MapViewClient } from '@/src/components/features/map/MapViewClient';
+import { AntennaControl } from '@/src/components/features/antenna/AntennaControl';
+import { ComposePanel } from '@/src/components/features/compose/ComposePanel';
+import { HexDial } from '@/src/components/features/hex-dial/HexDial';
+import { StatusBar } from '@/src/components/features/status-bar/StatusBar';
+import { MissedSignalsBanner } from '@/src/components/features/missed-signals/MissedSignalsBanner';
+import { SignalFeed } from '@/src/components/features/signal-feed/SignalFeed';
+import { LandingOverlay } from '@/src/components/features/auth/LandingOverlay';
+import type { User, Message, SignalEntry, StatsResponse } from '@/src/types/api';
 
-export default function Home() {
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api/v1';
+
+async function serverFetch<T>(
+  path: string,
+  token?: string,
+): Promise<T | null> {
+  try {
+    const res = await fetch(`${API_URL}${path}`, {
+      cache: 'no-store',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    if (!res.ok) return null;
+    const body = await res.json();
+    return (body.data as T) ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export default async function Home() {
+  const session = await auth();
+  const token = session?.backendJwt ?? null;
+
+  // All data fetched server-side in parallel
+  const [meData, feedData, statsData, missedData] = await Promise.all([
+    serverFetch<{ user: User; activeMessage: Message | null }>('/users/me', token ?? undefined),
+    token ? serverFetch<SignalEntry[]>('/signals/feed', token) : Promise.resolve([]),
+    serverFetch<StatsResponse>('/stats'),
+    token ? serverFetch<{ count: number }>('/signals/missed/count', token ?? undefined) : Promise.resolve(null),
+  ]);
+
+  const user = meData?.user ?? null;
+  const activeMessage = meData?.activeMessage ?? null;
+  const initialMessages = feedData ?? [];
+  const initialStats = statsData ?? null;
+  const missedCount = missedData?.count ?? 0;
+  const onlineContinents = initialStats?.online_continents ?? [];
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <UserProvider initialUser={user} initialMessage={activeMessage} backendToken={token}>
+      <div className="relative h-full w-full flex flex-col">
+        {/* Top chrome: status bar + missed signals banner */}
+        <div className="relative z-[1000] flex-shrink-0">
+          <StatusBar initialStats={initialStats} />
+          <MissedSignalsBanner initialCount={missedCount} />
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+
+        {/* Main area: map + overlays */}
+        <div className="relative flex-1 overflow-hidden">
+          {/* Map fills the area */}
+          <div className="absolute inset-0 z-0">
+            <MapViewClient onlineContinents={onlineContinents} />
+          </div>
+
+          {/* Right sidebar: signal feed */}
+          <div className="absolute top-0 right-0 bottom-0 w-72 z-[1000]">
+            <SignalFeed initialMessages={initialMessages} />
+          </div>
+
+          {/* Bottom-left: antenna ring */}
+          <div className="absolute bottom-6 left-6 z-[1000]">
+            <AntennaControl />
+          </div>
+
+          {/* Bottom-center: compose panel */}
+          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[1000]">
+            <ComposePanel />
+          </div>
+
+          {/* Full-screen transmission overlay */}
+          <HexDial />
         </div>
-      </main>
-    </div>
+
+        {/* Landing overlay — shown when not signed in */}
+        {!session && <LandingOverlay />}
+      </div>
+    </UserProvider>
   );
 }
