@@ -22,27 +22,33 @@ export function StatusBar({ initialStats }: StatusBarProps) {
   }, 30_000);
 
   return (
-    <div className="flex items-center gap-3 px-4 h-10 bg-gray-950/95 border-b border-gray-800 font-mono text-xs">
+    <div className="flex items-center gap-3 px-4 h-10 bg-gray-950/95 border-b border-gray-800 font-mono text-xs overflow-hidden">
       {user ? (
         <>
-          <span className="text-amber-400 font-semibold">{user.callsign}</span>
-          <span className="text-gray-700">|</span>
-          <span className="text-gray-400">{CONTINENT_NAMES[user.continent_id]}</span>
-          <span className="text-gray-700">|</span>
-          <span className="text-gray-400">
-            {user.antenna_direction}°&nbsp;
-            {DIRECTION_LABELS[user.antenna_direction as Direction]}
+          <span className="text-amber-400 font-semibold shrink-0">{user.callsign}</span>
+
+          {/* Continent + direction — hidden on mobile */}
+          <span className="hidden sm:contents">
+            <span className="text-gray-700">|</span>
+            <span className="text-gray-400 truncate">{CONTINENT_NAMES[user.continent_id]}</span>
+            <span className="text-gray-700">|</span>
+            <span className="text-gray-400 shrink-0">
+              {user.antenna_direction}°&nbsp;
+              {DIRECTION_LABELS[user.antenna_direction as Direction]}
+            </span>
           </span>
+
           {stats && (
             <>
               <span className="text-gray-700">|</span>
-              <span className="text-green-400">{stats.online_count} online</span>
+              <span className="text-green-400 shrink-0">{stats.online_count} online</span>
             </>
           )}
+
           <div className="ml-auto">
             <button
               onClick={() => signOut()}
-              className="text-gray-600 hover:text-gray-400 transition-colors"
+              className="text-gray-600 hover:text-gray-400 transition-colors shrink-0"
             >
               SIGN OUT
             </button>

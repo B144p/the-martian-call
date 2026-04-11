@@ -49,8 +49,13 @@ export default async function Home() {
   const onlineContinents = initialStats?.online_continents ?? [];
 
   return (
-    <UserProvider initialUser={user} initialMessage={activeMessage} backendToken={token}>
-      <div className="relative h-full w-full flex flex-col">
+    <UserProvider initialUser={user} initialMessage={activeMessage} backendToken={backendToken}>
+      {/*
+        isolate creates a new stacking context for all page content so that
+        shadcn Sheet/Dialog portals (z-50 at body level) always render above
+        our map overlay elements (z-[1000]) without needing to raise their z-index.
+      */}
+      <div className="relative h-full w-full flex flex-col isolate">
         {/* Top chrome: status bar + missed signals banner */}
         <div className="relative z-[1000] flex-shrink-0">
           <StatusBar initialStats={initialStats} />
@@ -64,8 +69,8 @@ export default async function Home() {
             <MapViewClient onlineContinents={onlineContinents} />
           </div>
 
-          {/* Right sidebar: signal feed */}
-          <div className="absolute top-0 right-0 bottom-0 w-72 z-[1000]">
+          {/* Right sidebar: signal feed — full sidebar on desktop, floating trigger on mobile */}
+          <div className="absolute top-2 right-2 z-[1000] md:top-0 md:right-0 md:bottom-0 md:w-72">
             <SignalFeed initialMessages={initialMessages} />
           </div>
 

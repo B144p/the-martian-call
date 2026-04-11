@@ -27,7 +27,7 @@ export function MissedSignalsBanner({ initialCount }: MissedSignalsBannerProps) 
       const res = await getMissedSignals();
       if (res.data) {
         setEntries(res.data);
-        setCount(0); // marked as read server-side
+        setCount(0);
       }
     } finally {
       setLoading(false);
@@ -44,19 +44,19 @@ export function MissedSignalsBanner({ initialCount }: MissedSignalsBannerProps) 
     <div className="bg-gray-900 border-b border-amber-900/50 font-mono text-xs">
       {/* Header row */}
       <div className="flex items-center gap-3 px-4 h-8">
-        <span className="text-amber-400">
+        <span className="text-amber-400 shrink-0">
           {count > 0 ? `${count} missed signal${count !== 1 ? 's' : ''}` : 'Missed signals'}
         </span>
         <button
           onClick={handleExpand}
           disabled={loading}
-          className="text-gray-500 hover:text-gray-300 transition-colors"
+          className="text-gray-500 hover:text-gray-300 transition-colors shrink-0"
         >
           {loading ? 'loading...' : expanded ? 'collapse' : 'expand'}
         </button>
         <button
           onClick={handleDismiss}
-          className="ml-auto text-gray-600 hover:text-gray-400 transition-colors"
+          className="ml-auto text-gray-600 hover:text-gray-400 transition-colors shrink-0"
         >
           ✕
         </button>
@@ -66,11 +66,11 @@ export function MissedSignalsBanner({ initialCount }: MissedSignalsBannerProps) 
       {expanded && entries.length > 0 && (
         <div className="px-4 pb-3 flex flex-col gap-1 max-h-40 overflow-y-auto">
           {entries.map((sig) => (
-            <div key={sig.id} className="flex items-center gap-3 text-gray-400 py-0.5">
+            <div key={sig.id} className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-gray-400 py-0.5">
               <span className="text-gray-500">
                 {new Date(sig.transmitted_at).toUTCString().slice(0, 25)}
               </span>
-              <span className="text-gray-600">|</span>
+              <span className="text-gray-600 hidden sm:inline">|</span>
               <span>{CONTINENT_NAMES[sig.sender_continent as ContinentId]}</span>
               <span className="text-gray-600">→</span>
               <span>

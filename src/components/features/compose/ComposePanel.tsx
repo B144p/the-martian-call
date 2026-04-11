@@ -10,6 +10,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useUser } from '@/src/contexts/UserContext';
 import { sendMessage } from '@/src/lib/api/message';
 import { toHexPreview } from '@/src/lib/hex';
@@ -20,6 +21,7 @@ export function ComposePanel() {
   const { user, setTransmitting } = useUser();
   const [text, setText] = useState('');
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -46,6 +48,7 @@ export function ComposePanel() {
       setTransmitting(res.data);
       setText('');
       setConfirmOpen(false);
+      setSheetOpen(false);
     } catch {
       setError('Network error — please try again');
     } finally {
@@ -58,8 +61,9 @@ export function ComposePanel() {
   else if (charCount >= 80) counterClass += 'text-amber-400';
   else counterClass += 'text-gray-500';
 
-  return (
-    <div className="flex flex-col gap-2 w-80 p-3 bg-gray-950 border border-gray-800 rounded-lg">
+  // Shared form body used in both desktop panel and mobile Sheet
+  const formBody = (
+    <>
       {/* HEX preview */}
       <div className="min-h-6 font-mono text-xs text-green-400 break-all">
         {hexPreview || <span className="text-gray-700">HEX preview</span>}
@@ -89,47 +93,79 @@ export function ComposePanel() {
           {isTransmitting ? 'TRANSMITTING...' : 'TRANSMIT'}
         </Button>
       </div>
+    </>
+  );
 
-      {/* Confirmation dialog */}
-      <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-        <DialogContent className="bg-gray-950 border-gray-800 text-gray-100">
-          <DialogHeader>
-            <DialogTitle className="font-mono text-amber-400">Confirm Transmission</DialogTitle>
-          </DialogHeader>
+  const confirmDialog = (
+    <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+      <DialogContent className="bg-gray-950 border-gray-800 text-gray-100">
+        <DialogHeader>
+          <DialogTitle className="font-mono text-amber-400">Confirm Transmission</DialogTitle>
+        </DialogHeader>
 
-          <div className="space-y-3">
-            <p className="text-sm text-gray-400">
-              This will broadcast your message. Transmission cannot be recalled once started.
-            </p>
-            <div className="bg-gray-900 rounded p-3 font-mono text-sm text-gray-200 break-all">
-              {text}
-            </div>
-            <div className="bg-gray-900 rounded p-3 font-mono text-xs text-green-400 break-all">
-              {hexPreview}
-            </div>
-            {error && <p className="text-xs text-red-400">{error}</p>}
+        <div className="space-y-3">
+          <p className="text-sm text-gray-400">
+            This will broadcast your message. Transmission cannot be recalled once started.
+          </p>
+          <div className="bg-gray-900 rounded p-3 font-mono text-sm text-gray-200 break-all">
+            {text}
           </div>
+          <div className="bg-gray-900 rounded p-3 font-mono text-xs text-green-400 break-all">
+            {hexPreview}
+          </div>
+          {error && <p className="text-xs text-red-400">{error}</p>}
+        </div>
 
-          <DialogFooter className="gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setConfirmOpen(false)}
-              className="border-gray-700 text-gray-300 hover:bg-gray-800 font-mono"
-            >
-              CANCEL
-            </Button>
-            <Button
-              size="sm"
-              disabled={sending}
-              onClick={handleConfirm}
-              className="bg-amber-500 hover:bg-amber-400 text-black font-mono"
-            >
-              {sending ? 'SENDING...' : 'CONFIRM'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
+        <DialogFooter className="gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setConfirmOpen(false)}
+            className="border-gray-700 text-gray-300 hover:bg-gray-800 font-mono"
+          >
+            CANCEL
+          </Button>
+          <Button
+            size="sm"
+            disabled={sending}
+            onClick={handleConfirm}
+            className="bg-amber-500 hover:bg-amber-400 text-black font-mono"
+          >
+            {sending ? 'SENDING...' : 'CONFIRM'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+
+  return (
+    <>
+      {/* Desktop: inline panel */}
+      <div className="hidden md:flex flex-col gap-2 w-80 p-3 bg-gray-950 border border-gray-800 rounded-lg">
+        {formBody}
+        {confirmDialog}
+      </div>
+
+      {/* Mobile: circular FAB → bottom Sheet */}
+      <div className="md:hidden">
+        <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+          <SheetTrigger
+            disabled={isTransmitting}
+            className="w-14 h-14 rounded-full bg-amber-500 hover:bg-amber-400 disabled:opacity-40 disabled:cursor-not-allowed text-black font-mono text-sm font-bold shadow-lg shadow-amber-900/40 transition-colors"
+          >
+            TX
+          </SheetTrigger>
+          <SheetContent side="bottom" className="bg-gray-950 border-gray-800 rounded-t-xl px-4 pt-4 pb-6">
+            <p className="font-mono text-xs text-gray-500 tracking-widest uppercase mb-3">
+              Compose Signal
+            </p>
+            <div className="flex flex-col gap-2">
+              {formBody}
+            </div>
+          </SheetContent>
+        </Sheet>
+        {confirmDialog}
+      </div>
+    </>
   );
 }
