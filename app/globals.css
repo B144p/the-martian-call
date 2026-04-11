@@ -128,3 +128,8 @@
     @apply font-sans;
   }
 }
+
+/* Prevent white flash when Leaflet tiles haven't loaded yet */
+.leaflet-container {
+  background: #0a0a0a !important;
+}
