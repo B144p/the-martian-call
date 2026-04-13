@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { MapContainer, TileLayer, CircleMarker, Polygon, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useUser } from '@/src/contexts/UserContext';
@@ -66,13 +66,67 @@ interface MapViewProps {
   onlineContinents: ContinentId[];
 }
 
+/** Smoothly interpolates an angle (degrees) toward a target using rAF. */
+function useAnimatedAngle(target: number): number {
+  const [display, setDisplay] = useState(target);
+  const displayRef = useRef(target);
+  const rafRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+
+    const from = displayRef.current;
+    // Shortest angular delta, handling 0°/360° wrap
+    let delta = ((target - from) % 360 + 360) % 360;
+    if (delta > 180) delta -= 360;
+
+    if (Math.abs(delta) < 0.3) {
+      displayRef.current = target;
+      rafRef.current = requestAnimationFrame(() => {
+        setDisplay(target);
+        rafRef.current = null;
+      });
+      return;
+    }
+
+    // 120°/s sweep speed
+    const SPEED = 0.12; // deg per ms
+    const duration = Math.abs(delta) / SPEED;
+    let startTs: number | null = null;
+
+    function frame(ts: number) {
+      if (startTs === null) startTs = ts;
+      const t = Math.min((ts - startTs) / duration, 1);
+      // ease-in-out quad
+      const ease = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+      const current = from + delta * ease;
+      displayRef.current = current;
+      setDisplay(current);
+      if (t < 1) {
+        rafRef.current = requestAnimationFrame(frame);
+      } else {
+        displayRef.current = target;
+        setDisplay(target);
+      }
+    }
+
+    rafRef.current = requestAnimationFrame(frame);
+    return () => {
+      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+    };
+  }, [target]);
+
+  return display;
+}
+
 export function MapView({ onlineContinents }: MapViewProps) {
   const { user } = useUser();
 
+  const animatedDirection = useAnimatedAngle(user?.antenna_direction ?? 0);
   const userCoords = user ? CONTINENT_COORDS[user.continent_id] : null;
   const conePolygon =
     userCoords
-      ? buildConePolygon(userCoords.lat, userCoords.lng, user!.antenna_direction)
+      ? buildConePolygon(userCoords.lat, userCoords.lng, animatedDirection)
       : null;
 
   return (
@@ -118,15 +172,15 @@ export function MapView({ onlineContinents }: MapViewProps) {
         />
       )}
 
-      {/* 30° cone in antenna direction */}
+      {/* 30° cone in antenna direction — position updates every rAF tick */}
       {conePolygon && (
         <Polygon
           positions={conePolygon}
           pathOptions={{
             color: '#f59e0b',
             fillColor: '#f59e0b',
-            fillOpacity: 0.15,
-            weight: 1,
+            fillOpacity: Math.abs(animatedDirection - (user?.antenna_direction ?? 0)) > 0.5 ? 0.25 : 0.15,
+            weight: Math.abs(animatedDirection - (user?.antenna_direction ?? 0)) > 0.5 ? 1.5 : 1,
           }}
         />
       )}
