@@ -63,6 +63,14 @@ export function HexDial() {
 
   const isVisible = activeMessage?.status === 'transmitting';
 
+  // TEMP: auto-transition to 'sent' when animation finishes (normally a Pusher event does this)
+  useEffect(() => {
+    if (dialState.done && activeMessage) {
+      setTransmitting({ ...activeMessage, status: 'sent' });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dialState.done]);
+
   // Update needle every 250ms
   useInterval(
     () => {
