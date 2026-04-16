@@ -13,7 +13,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       // On first sign-in, exchange Google access token for our backend JWT
       if (account?.access_token) {
         try {
-          const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api/v1';
+          const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8001/api/v1';
           const res = await fetch(`${apiUrl}/auth/google`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -22,9 +22,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           if (res.ok) {
             const data = await res.json();
             token.backendJwt = data.data?.access_token as string | undefined;
+            if (!token.backendJwt) {
+              console.error('[auth] Backend JWT exchange succeeded but access_token missing in response:', data);
+            }
+          } else {
+            const body = await res.text();
+            console.error(`[auth] Backend JWT exchange failed: ${res.status} ${res.statusText}`, body);
           }
-        } catch {
-          // Backend not running yet — JWT will be undefined until it is
+        } catch (err) {
+          console.error('[auth] Backend JWT exchange threw an error:', err);
         }
       }
       return token;

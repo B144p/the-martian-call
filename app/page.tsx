@@ -49,7 +49,7 @@ export default async function Home() {
   const onlineContinents = initialStats?.online_continents ?? [];
 
   return (
-    <UserProvider initialUser={user} initialMessage={activeMessage} backendToken={backendToken}>
+    <UserProvider initialUser={user} initialMessage={activeMessage} backendToken={token}>
       {/*
         isolate creates a new stacking context for all page content so that
         shadcn Sheet/Dialog portals (z-50 at body level) always render above
@@ -88,8 +88,8 @@ export default async function Home() {
           <HexDial />
         </div>
 
-        {/* Landing overlay — shown when not signed in */}
-        {!session && <LandingOverlay />}
+        {/* Landing overlay — shown when not signed in OR when session is stale (no backend user) */}
+        {!user && <LandingOverlay hasStaleSession={!!session && !token} />}
       </div>
     </UserProvider>
   );
