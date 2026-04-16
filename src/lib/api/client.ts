@@ -1,7 +1,9 @@
 import axios from 'axios';
 import type { ApiResponse } from '@/src/types/api';
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? '/api/v1';
+// Always use the relative path — the Next.js rewrite in next.config.ts
+// proxies /api/v1/* to the backend, so no cross-origin requests are made.
+const BASE_URL = '/api/v1';
 
 export const apiClient = axios.create({
   baseURL: BASE_URL,
