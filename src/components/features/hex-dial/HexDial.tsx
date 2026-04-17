@@ -46,7 +46,6 @@ function computeDialState(message: {
   const elapsed = now - startMs;
   const pairIndex = Math.min(Math.floor(elapsed / MS_PER_PAIR), total - 1);
   const currentPair = pairs[pairIndex] ?? '00';
-  // Low nibble of the byte value drives the needle position
   const byteVal = parseInt(currentPair, 16);
   const digitIndex = isNaN(byteVal) ? 0 : byteVal & 0x0f;
   const progress = Math.min((elapsed / (endMs - startMs)) * 100, 100);
@@ -55,7 +54,7 @@ function computeDialState(message: {
 }
 
 export function HexDial() {
-  const { activeMessage, setTransmitting } = useUser();
+  const { activeMessage, setTransmitting, socket } = useUser();
   const [dialState, setDialState] = useState<DialState>(() =>
     activeMessage ? computeDialState(activeMessage) : { pairIndex: 0, digitIndex: 0, progress: 0, done: false },
   );
@@ -63,9 +62,26 @@ export function HexDial() {
 
   const isVisible = activeMessage?.status === 'transmitting';
 
-  // TEMP: auto-transition to 'sent' when animation finishes (normally a Pusher event does this)
+  // Listen for server confirmation that transmission completed
   useEffect(() => {
-    if (dialState.done && activeMessage) {
+    if (!socket || !activeMessage) return;
+
+    const handler = ({ message_id }: { message_id: string }) => {
+      if (message_id === activeMessage.id) {
+        setTransmitting({ ...activeMessage, status: 'sent' });
+      }
+    };
+
+    socket.on('transmission:complete', handler);
+
+    return () => {
+      socket.off('transmission:complete', handler);
+    };
+  }, [socket, activeMessage?.id]);
+
+  // Fallback: if animation finishes before socket event arrives, transition locally
+  useEffect(() => {
+    if (dialState.done && activeMessage?.status === 'transmitting') {
       setTransmitting({ ...activeMessage, status: 'sent' });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -97,7 +113,6 @@ export function HexDial() {
   const pairs = activeMessage.hex_sequence.split(' ');
   const currentPair = pairs[dialState.pairIndex] ?? '--';
 
-  // Needle points up at 0° (digit 0), rotates clockwise 22.5° per step
   const needleRotateDeg = dialState.digitIndex * 22.5;
 
   return (
@@ -170,7 +185,7 @@ export function HexDial() {
               );
             })}
 
-            {/* Needle — smooth rotation via CSS spring transition */}
+            {/* Needle */}
             <g
               style={{
                 transform: `rotate(${needleRotateDeg}deg)`,
@@ -178,7 +193,6 @@ export function HexDial() {
                 transition: 'transform 380ms cubic-bezier(0.34, 1.4, 0.64, 1)',
               }}
             >
-              {/* Needle body */}
               <line
                 x1={CENTER}
                 y1={CENTER + 6}
@@ -188,7 +202,6 @@ export function HexDial() {
                 strokeWidth="2"
                 strokeLinecap="round"
               />
-              {/* Tip glow dot */}
               <circle cx={CENTER} cy={CENTER - NEEDLE_LENGTH} r="3.5" fill="#fbbf24" />
             </g>
 
@@ -197,7 +210,6 @@ export function HexDial() {
             <circle cx={CENTER} cy={CENTER} r="3" fill="#1f2937" />
           </svg>
 
-          {/* Current pair — remounts on change to flash */}
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{ paddingTop: '32px' }}>
             <span
               key={currentPair}

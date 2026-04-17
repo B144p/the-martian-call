@@ -1,45 +1,33 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Radio } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useUser } from '@/src/contexts/UserContext';
-import { createPusherClient } from '@/src/lib/pusher';
 import { DIRECTION_LABELS, CONTINENT_NAMES } from '@/src/lib/constants';
 import type { SignalEntry, Direction, ContinentId } from '@/src/types/api';
-import type Pusher from 'pusher-js';
-import type { Channel } from 'pusher-js';
 
 interface SignalFeedProps {
   initialMessages: SignalEntry[];
 }
 
 export function SignalFeed({ initialMessages }: SignalFeedProps) {
-  const { user, backendToken } = useUser();
+  const { socket } = useUser();
   const [messages, setMessages] = useState<SignalEntry[]>(initialMessages);
-  const pusherRef = useRef<Pusher | null>(null);
-  const channelRef = useRef<Channel | null>(null);
 
   useEffect(() => {
-    if (!user) return;
+    if (!socket) return;
 
-    const pusher = createPusherClient(backendToken);
-    pusherRef.current = pusher;
-
-    const channelName = `private-region-${user.continent_id}`;
-    const channel = pusher.subscribe(channelName);
-    channelRef.current = channel;
-
-    channel.bind('signal:received', (data: SignalEntry) => {
+    const handler = (data: SignalEntry) => {
       setMessages((prev) => [data, ...prev]);
-    });
+    };
+
+    socket.on('signal:received', handler);
 
     return () => {
-      channel.unbind_all();
-      pusher.unsubscribe(channelName);
-      pusher.disconnect();
+      socket.off('signal:received', handler);
     };
-  }, [user?.continent_id, backendToken]);
+  }, [socket]);
 
   const feedContent = (
     <>
@@ -67,12 +55,10 @@ export function SignalFeed({ initialMessages }: SignalFeedProps) {
                   {DIRECTION_LABELS[msg.sender_direction as Direction]}
                 </span>
               </div>
-              <p className="text-gray-200 whitespace-pre-wrap break-words">
-                {msg.content}
-                {msg.is_interrupted && (
-                  <span className="text-red-400"> [Transmission got interrupted!]</span>
-                )}
-              </p>
+              <p className="text-gray-200 whitespace-pre-wrap break-words">{msg.content}</p>
+              {msg.is_interrupted && (
+                <span className="text-red-400">[Transmission got interrupted!]</span>
+              )}
               <p className="mt-1 text-gray-700">
                 {new Date(msg.transmitted_at).toUTCString().slice(0, 25)}
               </p>

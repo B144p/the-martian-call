@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { signOut } from 'next-auth/react';
 import { useInterval } from 'usehooks-ts';
 import { useUser } from '@/src/contexts/UserContext';
@@ -13,13 +13,24 @@ interface StatusBarProps {
 }
 
 export function StatusBar({ initialStats }: StatusBarProps) {
-  const { user } = useUser();
+  const { user, socket } = useUser();
   const [stats, setStats] = useState<StatsResponse | null>(initialStats);
 
   useInterval(async () => {
     const res = await getStats();
     if (res.data) setStats(res.data);
   }, 30_000);
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handler = ({ online_count }: { online_count: number }) => {
+      setStats((prev) => (prev ? { ...prev, online_count } : prev));
+    };
+
+    socket.on('presence:update', handler);
+    return () => { socket.off('presence:update', handler); };
+  }, [socket]);
 
   return (
     <div className="flex items-center gap-3 px-4 h-10 bg-gray-950/95 border-b border-gray-800 font-mono text-xs overflow-hidden">
