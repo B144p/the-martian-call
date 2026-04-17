@@ -7,32 +7,7 @@
 - shadcn/ui (component library)
 - Zod (validation)
 - usehooks-ts (utility hooks)
-
-<!-- ## Commands
-```bash
-npm run dev      # Start dev server (port 3000)
-npm run build    # Production build
-npm run lint     # ESLint check
-npm run test     # Run tests
-``` -->
-
-<!-- ## Folder Structure
-```
-src/
-├── app/                  # App Router pages and layouts
-│   ├── (auth)/           # Auth route group
-│   ├── (dashboard)/      # Protected route group
-│   └── layout.tsx        # Root layout
-├── components/
-│   ├── ui/               # shadcn/ui generated components (do not edit manually)
-│   └── features/         # Feature-specific components built on top of shadcn
-├── lib/
-│   ├── api/              # API client and fetch helpers
-│   ├── hooks/            # Custom hooks (built on top of usehooks-ts)
-│   └── utils/            # Utility functions (includes shadcn cn() helper)
-├── types/                # Shared TypeScript types
-└── config/               # App configuration
-``` -->
+- socket.io-client — real-time WebSocket connection to NestJS gateway
 
 ## Component Rules
 - **Server components by default** — only add `"use client"` when you need:
@@ -86,6 +61,15 @@ src/
 - Define API response types in `src/types/` and match them to server DTOs
 - Use Zod schemas to infer types where possible: `type MyType = z.infer<typeof MySchema>`
 
+## WebSocket Rules
+- Use `socket.io-client` for all real-time connections — never use pusher-js
+- Create the socket instance in a context or custom hook — never directly inside a component
+- Pass the JWT Bearer token as `auth: { token }` in the socket options for server-side authentication
+- Use `NEXT_PUBLIC_API_URL` as the socket endpoint — never hardcode the URL
+- Always call `socket.disconnect()` in the cleanup function of the effect that created it
+- Listen for events with `socket.on(event, handler)` and clean up with `socket.off(event, handler)` on unmount
+- Continent rooms are joined server-side on connection — the client does not call `socket.join()`
+
 ## Error Handling
 - Always wrap API calls in try/catch
 - Show user-friendly error messages using shadcn `<Toast>` or `<Alert>` — never expose raw error objects to UI
@@ -100,5 +84,7 @@ src/
 - Do not write debounce logic from scratch — use `useDebounce` from usehooks-ts
 - Do not install React Hook Form — use shadcn Form + Zod instead
 - Do not edit files inside `components/ui/` directly
+- Do not use pusher-js — use socket.io-client for all real-time features
+- Do not call `socket.join()` from the client — room assignment is server-side only
 
 @AGENTS.md
