@@ -10,7 +10,9 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Spinner } from '@/components/ui/spinner';
+import { cn } from '@/lib/utils';
 import { useUser } from '@/src/contexts/UserContext';
 import { sendMessage } from '@/src/lib/api/message';
 import { toHexPreview } from '@/src/lib/hex';
@@ -56,10 +58,11 @@ export function ComposePanel() {
     }
   }
 
-  let counterClass = 'text-xs font-mono ';
-  if (charCount >= MAX_CHARS) counterClass += 'text-red-400';
-  else if (charCount >= 80) counterClass += 'text-amber-400';
-  else counterClass += 'text-gray-500';
+  const counterClass = cn('text-xs font-mono', {
+    'text-destructive': charCount >= MAX_CHARS,
+    'text-amber-400': charCount >= 80 && charCount < MAX_CHARS,
+    'text-gray-500': charCount < 80,
+  });
 
   // Shared form body used in both desktop panel and mobile Sheet
   const formBody = (
@@ -103,7 +106,7 @@ export function ComposePanel() {
           <DialogTitle className="font-mono text-amber-400">Confirm Transmission</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-3">
+        <div className="flex flex-col gap-3">
           <p className="text-sm text-gray-400">
             This will broadcast your message. Transmission cannot be recalled once started.
           </p>
@@ -113,7 +116,7 @@ export function ComposePanel() {
           <div className="bg-gray-900 rounded p-3 font-mono text-xs text-green-400 break-all">
             {hexPreview}
           </div>
-          {error && <p className="text-xs text-red-400">{error}</p>}
+          {error && <p className="text-xs text-destructive">{error}</p>}
         </div>
 
         <DialogFooter className="gap-2">
@@ -131,6 +134,7 @@ export function ComposePanel() {
             onClick={handleConfirm}
             className="bg-amber-500 hover:bg-amber-400 text-black font-mono"
           >
+            {sending && <Spinner data-icon="inline-start" />}
             {sending ? 'SENDING...' : 'CONFIRM'}
           </Button>
         </DialogFooter>
@@ -143,7 +147,6 @@ export function ComposePanel() {
       {/* Desktop: inline panel */}
       <div className="hidden md:flex flex-col gap-2 w-80 p-3 bg-gray-950 border border-gray-800 rounded-lg">
         {formBody}
-        {confirmDialog}
       </div>
 
       {/* Mobile: circular FAB → bottom Sheet */}
@@ -151,21 +154,25 @@ export function ComposePanel() {
         <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
           <SheetTrigger
             disabled={isTransmitting}
-            className="w-14 h-14 rounded-full bg-amber-500 hover:bg-amber-400 disabled:opacity-40 disabled:cursor-not-allowed text-black font-mono text-sm font-bold shadow-lg shadow-amber-900/40 transition-colors"
+            className="size-14 rounded-full bg-amber-500 hover:bg-amber-400 disabled:opacity-40 disabled:cursor-not-allowed text-black font-mono text-sm font-bold shadow-lg shadow-amber-900/40 transition-colors"
           >
             TX
           </SheetTrigger>
           <SheetContent side="bottom" className="bg-gray-950 border-gray-800 rounded-t-xl px-4 pt-4 pb-6">
-            <p className="font-mono text-xs text-gray-500 tracking-widest uppercase mb-3">
-              Compose Signal
-            </p>
+            <SheetHeader>
+              <SheetTitle className="font-mono text-xs text-gray-500 tracking-widest uppercase">
+                Compose Signal
+              </SheetTitle>
+            </SheetHeader>
             <div className="flex flex-col gap-2">
               {formBody}
             </div>
           </SheetContent>
         </Sheet>
-        {confirmDialog}
       </div>
+
+      {/* Single dialog instance shared by both layouts */}
+      {confirmDialog}
     </>
   );
 }

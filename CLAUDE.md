@@ -61,15 +61,6 @@
 - Define API response types in `src/types/` and match them to server DTOs
 - Use Zod schemas to infer types where possible: `type MyType = z.infer<typeof MySchema>`
 
-## WebSocket Rules
-- Use `socket.io-client` for all real-time connections — never use pusher-js
-- Create the socket instance in a context or custom hook — never directly inside a component
-- Pass the JWT Bearer token as `auth: { token }` in the socket options for server-side authentication
-- Use `NEXT_PUBLIC_API_URL` as the socket endpoint — never hardcode the URL
-- Always call `socket.disconnect()` in the cleanup function of the effect that created it
-- Listen for events with `socket.on(event, handler)` and clean up with `socket.off(event, handler)` on unmount
-- Continent rooms are joined server-side on connection — the client does not call `socket.join()`
-
 ## Error Handling
 - Always wrap API calls in try/catch
 - Show user-friendly error messages using shadcn `<Toast>` or `<Alert>` — never expose raw error objects to UI

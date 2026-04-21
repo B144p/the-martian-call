@@ -149,19 +149,19 @@ export function MapView({ onlineContinents }: MapViewProps) {
       />
 
       {/* Faint dots for other online users' continents */}
-      {onlineContinents
-        .filter((id) => id !== user?.continent_id)
-        .map((id) => {
-          const coords = CONTINENT_COORDS[id];
-          return coords ? (
-            <CircleMarker
-              key={id}
-              center={[coords.lat, coords.lng]}
-              radius={5}
-              pathOptions={{ color: '#6b7280', fillColor: '#6b7280', fillOpacity: 0.4, weight: 1 }}
-            />
-          ) : null;
-        })}
+      {onlineContinents.flatMap((id) => {
+        if (id === user?.continent_id) return [];
+        const coords = CONTINENT_COORDS[id];
+        if (!coords) return [];
+        return [
+          <CircleMarker
+            key={id}
+            center={[coords.lat, coords.lng]}
+            radius={5}
+            pathOptions={{ color: '#6b7280', fillColor: '#6b7280', fillOpacity: 0.4, weight: 1 }}
+          />,
+        ];
+      })}
 
       {/* User marker */}
       {userCoords && (

@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, useRef } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
 import type { Socket } from 'socket.io-client';
 import type { User, Message, Direction } from '@/src/types/api';
 import { apiClient } from '@/src/lib/api/client';
@@ -32,8 +32,9 @@ export function UserProvider({
 }: UserProviderProps) {
   const [user, setUser] = useState<User | null>(initialUser);
   const [activeMessage, setActiveMessage] = useState<Message | null>(initialMessage);
-  const socketRef = useRef<Socket | null>(null);
-  const [socket, setSocket] = useState<Socket | null>(null);
+  const [socket] = useState<Socket | null>(() =>
+    backendToken && initialUser ? createSocket(backendToken) : null
+  );
 
   useEffect(() => {
     if (backendToken) {
@@ -43,19 +44,7 @@ export function UserProvider({
     }
   }, [backendToken]);
 
-  useEffect(() => {
-    if (!backendToken || !initialUser) return;
-
-    const s = createSocket(backendToken);
-    socketRef.current = s;
-    setSocket(s);
-
-    return () => {
-      s.disconnect();
-      socketRef.current = null;
-      setSocket(null);
-    };
-  }, [backendToken, initialUser?.id]);
+  useEffect(() => () => { socket?.disconnect(); }, [socket]);
 
   function setAntennaDirection(direction: Direction) {
     setUser((prev) => (prev ? { ...prev, antenna_direction: direction } : prev));

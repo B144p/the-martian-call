@@ -18,7 +18,9 @@ export const CONTINENT_NAMES: Record<ContinentId, string> = {
   oc: 'Oceania',
 };
 
-export const VALID_DIRECTIONS: Direction[] = [0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330];
+export const VALID_DIRECTIONS = [
+  0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330,
+] as const satisfies readonly Direction[];
 
 export const DIRECTION_LABELS: Record<Direction, string> = {
   0: 'N',
