@@ -3,7 +3,8 @@
 import { useRef, useState } from 'react';
 import { Compass } from 'lucide-react';
 import { useInterval } from 'usehooks-ts';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { cn } from '@/lib/utils';
 import { useUser } from '@/src/contexts/UserContext';
 import { rotateAntenna } from '@/src/lib/api/antenna';
 import { VALID_DIRECTIONS, DIRECTION_LABELS } from '@/src/lib/constants';
@@ -76,7 +77,7 @@ export function AntennaControl() {
   const currentDirection = user?.antenna_direction ?? 0;
 
   const ring = (
-    <div className="relative w-48 h-48">
+    <div className="relative size-48">
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
         <span className="text-xs font-mono text-amber-400">
           {currentDirection}° {DIRECTION_LABELS[currentDirection as Direction]}
@@ -105,15 +106,15 @@ export function AntennaControl() {
               top: `${y}%`,
               transform: 'translate(-50%, -50%)',
             }}
-            className={[
-              'w-8 h-8 rounded-full text-[10px] font-mono border transition-colors',
+            className={cn(
+              'size-8 rounded-full text-[10px] font-mono border transition-colors',
               isActive
                 ? 'bg-amber-400 text-black border-amber-400'
                 : isTarget
                   ? 'bg-amber-900 text-amber-300 border-amber-500'
                   : 'bg-gray-900 text-gray-400 border-gray-700 hover:border-amber-500 hover:text-amber-300',
               disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer',
-            ].join(' ')}
+            )}
           >
             {DIRECTION_LABELS[dir]}
           </button>
@@ -134,15 +135,17 @@ export function AntennaControl() {
         <Sheet>
           <SheetTrigger
             disabled={disabled}
-            className="w-12 h-12 rounded-full bg-gray-900 border border-gray-700 hover:border-amber-500 disabled:opacity-40 disabled:cursor-not-allowed text-gray-400 hover:text-amber-400 transition-colors flex items-center justify-center"
+            className="size-12 rounded-full bg-gray-900 border border-gray-700 hover:border-amber-500 disabled:opacity-40 disabled:cursor-not-allowed text-gray-400 hover:text-amber-400 transition-colors flex items-center justify-center"
             aria-label="Antenna control"
           >
-            <Compass size={18} />
+            <Compass />
           </SheetTrigger>
           <SheetContent side="bottom" className="bg-gray-950 border-gray-800 rounded-t-xl px-4 pt-4 pb-8">
-            <p className="font-mono text-xs text-gray-500 tracking-widest uppercase mb-4 text-center">
-              Antenna Direction
-            </p>
+            <SheetHeader>
+              <SheetTitle className="font-mono text-xs text-gray-500 tracking-widest uppercase text-center">
+                Antenna Direction
+              </SheetTitle>
+            </SheetHeader>
             <div className="flex justify-center">
               {ring}
             </div>

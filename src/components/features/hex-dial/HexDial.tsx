@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useInterval } from 'usehooks-ts';
 import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
 import { useUser } from '@/src/contexts/UserContext';
 import { interruptMessage } from '@/src/lib/api/message';
 
@@ -77,6 +78,7 @@ export function HexDial() {
     return () => {
       socket.off('transmission:complete', handler);
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [socket, activeMessage?.id]);
 
   // Fallback: if animation finishes before socket event arrives, transition locally
@@ -242,8 +244,9 @@ export function HexDial() {
           size="sm"
           disabled={interrupting}
           onClick={handleCancel}
-          className="border-red-800 text-red-400 hover:bg-red-950 font-mono"
+          className="border-destructive text-destructive hover:bg-destructive/10 font-mono"
         >
+          {interrupting && <Spinner data-icon="inline-start" />}
           {interrupting ? 'INTERRUPTING...' : 'INTERRUPT TRANSMISSION'}
         </Button>
       </div>

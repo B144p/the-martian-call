@@ -23,7 +23,7 @@ export function LandingOverlay({ hasStaleSession = false }: LandingOverlayProps)
         <h1 className="font-mono text-xl sm:text-3xl tracking-widest text-amber-400">THE MARTIAN CALL</h1>
         <p className="font-mono text-sm text-gray-500">Broadcast signals across continents</p>
         {hasStaleSession && (
-          <p className="font-mono text-xs text-red-400">Session expired — please sign in again.</p>
+          <p className="font-mono text-xs text-destructive">Session expired — please sign in again.</p>
         )}
         <Button
           onClick={handleSignIn}

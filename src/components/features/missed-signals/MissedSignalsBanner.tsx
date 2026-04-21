@@ -15,7 +15,7 @@ export function MissedSignalsBanner({ initialCount }: MissedSignalsBannerProps) 
   const [entries, setEntries] = useState<MissedSignal[]>([]);
   const [loading, setLoading] = useState(false);
 
-  if (count === 0) return null;
+  if (count === 0 && !expanded) return null;
 
   async function handleExpand() {
     if (expanded) {

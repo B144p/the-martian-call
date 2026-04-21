@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { signOut } from 'next-auth/react';
 import { useInterval } from 'usehooks-ts';
+import { Badge } from '@/components/ui/badge';
 import { useUser } from '@/src/contexts/UserContext';
 import { getStats } from '@/src/lib/api/stats';
 import { DIRECTION_LABELS, CONTINENT_NAMES } from '@/src/lib/constants';
@@ -52,7 +53,7 @@ export function StatusBar({ initialStats }: StatusBarProps) {
           {stats && (
             <>
               <span className="text-gray-700">|</span>
-              <span className="text-green-400 shrink-0">{stats.online_count} online</span>
+              <Badge variant="secondary" className="shrink-0 font-mono">{stats.online_count} online</Badge>
             </>
           )}
 

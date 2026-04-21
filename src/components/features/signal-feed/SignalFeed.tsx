@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Radio } from 'lucide-react';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { useUser } from '@/src/contexts/UserContext';
 import { DIRECTION_LABELS, CONTINENT_NAMES } from '@/src/lib/constants';
 import type { SignalEntry, Direction, ContinentId } from '@/src/types/api';
@@ -57,7 +57,7 @@ export function SignalFeed({ initialMessages }: SignalFeedProps) {
               </div>
               <p className="text-gray-200 whitespace-pre-wrap break-words">{msg.content}</p>
               {msg.is_interrupted && (
-                <span className="text-red-400">[Transmission got interrupted!]</span>
+                <span className="text-destructive">[Transmission got interrupted!]</span>
               )}
               <p className="mt-1 text-gray-700">
                 {new Date(msg.transmitted_at).toUTCString().slice(0, 25)}
@@ -80,10 +80,13 @@ export function SignalFeed({ initialMessages }: SignalFeedProps) {
       <div className="md:hidden">
         <Sheet>
           <SheetTrigger className="flex items-center gap-1.5 px-3 py-2 bg-gray-950/90 border border-gray-800 rounded-lg font-mono text-xs text-gray-400 hover:text-amber-400 hover:border-amber-800 transition-colors">
-            <Radio size={13} />
+            <Radio />
             FEED
           </SheetTrigger>
           <SheetContent side="right" className="p-0 bg-gray-950 border-gray-800 flex flex-col font-mono text-xs w-[85vw] max-w-sm">
+            <SheetHeader className="sr-only">
+              <SheetTitle>Signal Feed</SheetTitle>
+            </SheetHeader>
             {feedContent}
           </SheetContent>
         </Sheet>
